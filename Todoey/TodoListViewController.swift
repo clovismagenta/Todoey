@@ -11,6 +11,7 @@ import UIKit
 class TodoListViewController: UITableViewController {
 
     var itemArray = ["Find Mike","Buy eggs","Go to Shopping","Study English"]
+    let defaults = UserDefaults()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -19,6 +20,10 @@ class TodoListViewController: UITableViewController {
         let buttonAdd = UIBarButtonItem(title: "+", style: .plain, target: self, action: #selector(addItem))
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
+        
+        if item = defaults.array(forKey: "ToDoListArray") as! [String] {
+            itemArray = item
+        }
         
     }
     
@@ -64,6 +69,7 @@ class TodoListViewController: UITableViewController {
             if let newItem = globalTextField.text {
                 if newItem != "" {
                     self.itemArray.append(newItem)
+                    self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
                 }
             }
             

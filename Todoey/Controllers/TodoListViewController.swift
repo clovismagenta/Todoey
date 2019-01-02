@@ -12,7 +12,8 @@ class TodoListViewController: UITableViewController {
 
     var itemArray = [ Item ]()
     let defaults = UserDefaults()
-    
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -22,9 +23,11 @@ class TodoListViewController: UITableViewController {
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
         
-        if let takeList = defaults.array(forKey: "ToDoListArray") as? [Item] {
-            itemArray = takeList
-        }
+        loadItems()
+        
+//        if let takeList = defaults.array(forKey: "ToDoList") as? [Item] {
+//            itemArray = takeList
+//        }
         
     }
     
@@ -60,6 +63,8 @@ class TodoListViewController: UITableViewController {
         }
         
         tableView.deselectRow(at: indexPath, animated: true)
+        print(dataFilePath)
+        saveItems()
     }
 
 
@@ -70,20 +75,25 @@ class TodoListViewController: UITableViewController {
         var globalTextField = UITextField()
         
         let alertView = UIAlertController(title: "Add a new Todoey", message: "", preferredStyle: .alert)
-        let actionAlert = UIAlertAction(title: "Confirm", style: .default) { (action) in
-        let newItem = Item()
+        let actionAlert = UIAlertAction(title: "Confirm", style: .default) {
+            (action) in
+  
+            let newItem = Item()
         
             newItem.title = globalTextField.text!
             if newItem.title != "" {
                 self.itemArray.append(newItem)
-                self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
+                
+                self.saveItems()
+                
+//                self.defaults.setValue(self.itemArray, forKey: "ToDoList")
             }
             
-            self.updateUIList()
         }
         
         alertView.addAction(actionAlert)
-        alertView.addTextField { (alertTextField) in
+        alertView.addTextField { (alertTextField)
+            in
             alertTextField.placeholder = "Inform your new Todoey item..."
             globalTextField = alertTextField
         }
@@ -96,6 +106,31 @@ class TodoListViewController: UITableViewController {
     
     func updateUIList() {
         tableView.reloadData()
+    }
+    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+            
+        } catch {
+            print("Error enconding item Array, \(error)")
+        }
+        updateUIList()
+    }
+
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("Error on deconding, \(error)")
+            }
+        
+        }
     }
 }
 

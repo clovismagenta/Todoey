@@ -10,7 +10,7 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
 
-    var itemArray = ["Find Mike","Buy eggs","Go to Shopping","Study English"]
+    var itemArray = [ Item ]()
     let defaults = UserDefaults()
     
     override func viewDidLoad() {
@@ -18,11 +18,12 @@ class TodoListViewController: UITableViewController {
         
         // right button "+"
         let buttonAdd = UIBarButtonItem(title: "+", style: .plain, target: self, action: #selector(addItem))
+        
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
         
-        if item = defaults.array(forKey: "ToDoListArray") as! [String] {
-            itemArray = item
+        if let takeList = defaults.array(forKey: "ToDoListArray") as? [Item] {
+            itemArray = takeList
         }
         
     }
@@ -31,8 +32,11 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let itemCell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let actualItem = itemArray[indexPath.row]
         
-        itemCell.textLabel?.text = itemArray[indexPath.row]
+        itemCell.textLabel?.text = actualItem.title
+        
+        itemCell.accessoryType = actualItem.done ? .checkmark : .none
         
         return itemCell
         
@@ -47,6 +51,8 @@ class TodoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
      
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        
         if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
             tableView.cellForRow(at: indexPath)?.accessoryType = .none
         } else {
@@ -65,12 +71,12 @@ class TodoListViewController: UITableViewController {
         
         let alertView = UIAlertController(title: "Add a new Todoey", message: "", preferredStyle: .alert)
         let actionAlert = UIAlertAction(title: "Confirm", style: .default) { (action) in
-            
-            if let newItem = globalTextField.text {
-                if newItem != "" {
-                    self.itemArray.append(newItem)
-                    self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
-                }
+        let newItem = Item()
+        
+            newItem.title = globalTextField.text!
+            if newItem.title != "" {
+                self.itemArray.append(newItem)
+                self.defaults.setValue(self.itemArray, forKey: "ToDoListArray")
             }
             
             self.updateUIList()

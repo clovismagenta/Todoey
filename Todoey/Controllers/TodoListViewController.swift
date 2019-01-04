@@ -16,6 +16,12 @@ class TodoListViewController: UITableViewController {
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     let actualContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
+    var selectedCategory : Category? {
+        didSet{
+            loadItems()
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -25,8 +31,6 @@ class TodoListViewController: UITableViewController {
         
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
-        
-        loadItems()
         
 //        if let takeList = defaults.array(forKey: "ToDoList") as? [Item] {
 //            itemArray = takeList
@@ -82,6 +86,7 @@ class TodoListViewController: UITableViewController {
             newItem.title = globalTextField.text!
             if newItem.title != "" {
                 newItem.done = false
+                newItem.parentCategory = self.selectedCategory
                 self.itemArray.append(newItem)
                 
                 self.saveItems()
@@ -122,10 +127,21 @@ class TodoListViewController: UITableViewController {
         updateUIList()
     }
 
-    func loadItems(with: NSFetchRequest<Item> = Item.fetchRequest() ) {
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest(), predicate: NSPredicate? = nil ) {
 
+        let standardPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        if let additionalPredicate = predicate {
+            
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [standardPredicate, additionalPredicate] )
+            
+        } else {
+            
+            request.predicate = standardPredicate
+        }
+        
         do {
-            itemArray = try actualContext.fetch(with)
+            itemArray = try actualContext.fetch(request)
         } catch {
             print("Error during fetch request process: \(error)")
         }
@@ -139,6 +155,16 @@ class TodoListViewController: UITableViewController {
 //            print("Error on deconding, \(error)")
 //        }
     }
+    
+//    func initialLoad() {
+//
+//        let newFetch : NSFetchRequest<Item> = Item.fetchRequest()
+//        let newPredicate = NSPredicate(format: "parentCategory = %@", (selectedCategory)!)
+//
+//        newFetch.predicate = newPredicate
+//        loadItems(with: newFetch)
+//        tableView.reloadData()
+//    }
     
 }
 
@@ -176,10 +202,10 @@ extension TodoListViewController : UISearchBarDelegate {
         
         if searchBar.text?.count != 0 {
             
-            myRequest.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+            let myPredicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
             myRequest.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
             
-            loadItems(with: myRequest)
+            loadItems(with: myRequest, predicate: myPredicate)
 
             
         } else {

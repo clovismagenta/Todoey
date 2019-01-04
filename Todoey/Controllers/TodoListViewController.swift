@@ -7,16 +7,19 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
 
     var itemArray = [ Item ]()
     let defaults = UserDefaults()
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
-
+//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
+    let actualContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // right button "+"
         let buttonAdd = UIBarButtonItem(title: "+", style: .plain, target: self, action: #selector(addItem))
         
@@ -31,7 +34,7 @@ class TodoListViewController: UITableViewController {
         
     }
     
-    //MARK - Tableview datasource Methods
+    //MARK: Tableview datasource Methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let itemCell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
@@ -50,25 +53,21 @@ class TodoListViewController: UITableViewController {
         return itemArray.count
     }
 
-    //MARK - Tableview Delegate Methods
+    //MARK: Tableview Delegate Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
      
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        } else {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+//        actualContext.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
         
         tableView.deselectRow(at: indexPath, animated: true)
-        print(dataFilePath)
         saveItems()
     }
 
 
-    //MARK - Add new items
+    //MARK: Add new items
     
     @objc func addItem() {
         
@@ -78,10 +77,11 @@ class TodoListViewController: UITableViewController {
         let actionAlert = UIAlertAction(title: "Confirm", style: .default) {
             (action) in
   
-            let newItem = Item()
+            let newItem = Item(context: self.actualContext)
         
             newItem.title = globalTextField.text!
             if newItem.title != "" {
+                newItem.done = false
                 self.itemArray.append(newItem)
                 
                 self.saveItems()
@@ -102,35 +102,97 @@ class TodoListViewController: UITableViewController {
     }
     
     
-    //MARK - Update UI
+    //MARK: Update UI
     
     func updateUIList() {
         tableView.reloadData()
     }
     
     func saveItems() {
-        let encoder = PropertyListEncoder()
+//        let encoder = PropertyListEncoder()
         
         do {
-            let data = try encoder.encode(itemArray)
-            try data.write(to: dataFilePath!)
+//            let data = try encoder.encode(itemArray)
+//            try data.write(to: dataFilePath!)
+            try actualContext.save()
             
         } catch {
-            print("Error enconding item Array, \(error)")
+            print("Error saving context, \(error)")
         }
         updateUIList()
     }
 
-    func loadItems() {
-        if let data = try? Data(contentsOf: dataFilePath!) {
-            let decoder = PropertyListDecoder()
-            do {
-                itemArray = try decoder.decode([Item].self, from: data)
-            } catch {
-                print("Error on deconding, \(error)")
-            }
-        
+    func loadItems(with: NSFetchRequest<Item> = Item.fetchRequest() ) {
+
+        do {
+            itemArray = try actualContext.fetch(with)
+        } catch {
+            print("Error during fetch request process: \(error)")
         }
+        
+////        if let data = try? Data(contentsOf: dataFilePath!) {
+////            let decoder = PropertyListDecoder()
+//        do {
+//
+////                itemArray = try decoder.decode([Item].self, from: data)
+//        } catch {
+//            print("Error on deconding, \(error)")
+//        }
+    }
+    
+}
+
+// MARK: Search Bar methods
+extension TodoListViewController : UISearchBarDelegate {
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        
+        let myRequest : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        if let textTipped = searchBar.text {
+            
+            if textTipped == "" {
+                
+                myRequest.predicate = NSPredicate(format: "title != ''")
+                myRequest.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+                
+                loadItems(with: myRequest)
+                tableView.reloadData()
+
+            } else {
+
+                myRequest.predicate = NSPredicate(format: "title CONTAINS[cd] %@", textTipped)
+                myRequest.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+                
+                loadItems(with: myRequest)
+    
+            }
+        }
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        
+        let myRequest : NSFetchRequest<Item> = Item.fetchRequest()
+        
+        if searchBar.text?.count != 0 {
+            
+            myRequest.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+            myRequest.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+            
+            loadItems(with: myRequest)
+
+            
+        } else {
+            loadItems()
+            
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
+            
+            
+        }
+        
+        tableView.reloadData()
     }
 }
 

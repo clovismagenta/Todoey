@@ -10,9 +10,7 @@ import UIKit
 import CoreData
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
-
-    let realm = try! Realm()
+class TodoListViewController: SwipeTableViewController {
     
 //    var itemArray = [ Item ]() // coredate uses it
     var itemArray : Results<Item>?
@@ -39,6 +37,8 @@ class TodoListViewController: UITableViewController {
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
         
+        tableView.rowHeight = 80.0
+        
 //        if let takeList = defaults.array(forKey: "ToDoList") as? [Item] {
 //            itemArray = takeList
 //        }
@@ -48,7 +48,7 @@ class TodoListViewController: UITableViewController {
     //MARK: Tableview datasource Methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let itemCell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let itemCell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let actualItem = itemArray?[indexPath.row] {
             itemCell.textLabel?.text = actualItem.title
@@ -58,13 +58,11 @@ class TodoListViewController: UITableViewController {
             itemCell.textLabel?.text = "No Items Added"
             
         }
-        
-        
+
         return itemCell
         
     }
-
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray?.count ?? 1
     }
@@ -180,6 +178,23 @@ class TodoListViewController: UITableViewController {
     func loadItems() {
         
         itemArray = selectedCategory?.items.sorted(byKeyPath: "dataCreated", ascending: true)
+    }
+    
+    
+    //MARK: Swipe Class methods
+    
+    override func updateModel(at indexPath: IndexPath) {
+        
+        if let posItem = itemArray?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(posItem)
+                }
+            } catch {
+                print("error during ITEM deletion: \(error)")
+            }
+        }
+        
     }
     
     /* COREDATA METHOD - BEGIN

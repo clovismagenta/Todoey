@@ -9,18 +9,19 @@
 import UIKit
 import CoreData
 import RealmSwift
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     
 //    var itemArray = [ Item ]() // coredate uses it
-    var itemArray : Results<Item>?
-    let defaults = UserDefaults()
+//    let defaults = UserDefaults()
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
     
     /* COREDATE METHOD - BEGIN
     let actualContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     COREDATA METHOD - END */
-    
+
+    var itemArray : Results<Item>?
     var selectedCategory : Category? {
         didSet{
             loadItems()
@@ -37,8 +38,6 @@ class TodoListViewController: SwipeTableViewController {
         buttonAdd.tintColor = UIColor.white
         navigationItem.rightBarButtonItem = buttonAdd
         
-        tableView.rowHeight = 80.0
-        
 //        if let takeList = defaults.array(forKey: "ToDoList") as? [Item] {
 //            itemArray = takeList
 //        }
@@ -49,6 +48,13 @@ class TodoListViewController: SwipeTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let itemCell = super.tableView(tableView, cellForRowAt: indexPath)
+        let percentage = CGFloat(indexPath.row) / CGFloat((itemArray?.count)!)
+        let selectedItemColor = UIColor(hexString: selectedCategory?.hexColor)
+        
+        if let cellColor = selectedItemColor?.darken(byPercentage: CGFloat( percentage ) ) {
+            itemCell.backgroundColor = cellColor
+            itemCell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: cellColor, isFlat: true)
+        }
         
         if let actualItem = itemArray?[indexPath.row] {
             itemCell.textLabel?.text = actualItem.title
@@ -56,7 +62,6 @@ class TodoListViewController: SwipeTableViewController {
             itemCell.accessoryType = actualItem.done ? .checkmark : .none
         } else {
             itemCell.textLabel?.text = "No Items Added"
-            
         }
 
         return itemCell

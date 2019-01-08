@@ -9,11 +9,12 @@
 import UIKit
 import CoreData
 import RealmSwift
+import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController {
     
     var categoryArray : Results<Category>? // Optional variable
-    
+    var catColor : UIColor?
     /* COREDATA METHOD - BEGIN
     var categoryArray = [Category]()
 
@@ -28,7 +29,6 @@ class CategoryViewController: SwipeTableViewController {
         
         loadCategories()
         tableView.reloadData()
-        tableView.rowHeight = 80.0
         
     }
     
@@ -51,8 +51,11 @@ class CategoryViewController: SwipeTableViewController {
             let newCategory = Category(context: self.actualContext)
             COREDATA METHOD - END */
             let newCategory = Category()
+            let color = UIColor.randomFlat()?.hexString
+            
             if let newName = globalTextValue.text {
                 newCategory.name = newName
+                newCategory.hexColor = color!
                 self.commitData(thisCategory: newCategory)
 //                self.categoryArray.append(newCategory)
                 self.tableView.reloadData()
@@ -77,7 +80,10 @@ class CategoryViewController: SwipeTableViewController {
         let posCell = super.tableView(tableView, cellForRowAt: indexPath)
         
         posCell.textLabel?.text = categoryArray?[indexPath.row].name ?? "Category not added yet"
+        posCell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: posCell.backgroundColor, isFlat: true)
         
+        posCell.backgroundColor = UIColor(hexString: categoryArray?[indexPath.row].hexColor)
+       
         return posCell
     }
     
@@ -85,8 +91,6 @@ class CategoryViewController: SwipeTableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        print("Item clicked: \(categoryArray?[indexPath.row].name ?? "No Name")")
- 
         //actualContext.delete(categoryArray[indexPath.row])
         //categoryArray.remove(at: indexPath.row)
         //tableView.reloadData()

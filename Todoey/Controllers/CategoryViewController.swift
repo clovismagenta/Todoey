@@ -13,6 +13,7 @@ import ChameleonFramework
 
 class CategoryViewController: SwipeTableViewController {
     
+    var hexValueBackColor : String = ""
     var categoryArray : Results<Category>? // Optional variable
     var catColor : UIColor?
     /* COREDATA METHOD - BEGIN
@@ -32,6 +33,17 @@ class CategoryViewController: SwipeTableViewController {
         
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        
+        if hexValueBackColor == "" {
+            guard let catNavColor = navigationController?.navigationBar.barTintColor else { fatalError() }
+            
+            hexValueBackColor = catNavColor.hexString
+        }
+        
+        
+    }
+
     // MARK: Add new Categories
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
@@ -103,6 +115,7 @@ class CategoryViewController: SwipeTableViewController {
         
         if let indexPath = tableView.indexPathForSelectedRow {
             destinyStoryBoard.selectedCategory = categoryArray?[indexPath.row]
+            destinyStoryBoard.catNavBarColor = hexValueBackColor
         }
         
     }

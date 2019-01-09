@@ -21,12 +21,14 @@ class TodoListViewController: SwipeTableViewController {
     let actualContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     COREDATA METHOD - END */
 
+    @IBOutlet weak var searchBar: UISearchBar!
     var itemArray : Results<Item>?
     var selectedCategory : Category? {
         didSet{
             loadItems()
         }
     }
+    var catNavBarColor : String = ""
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -34,17 +36,32 @@ class TodoListViewController: SwipeTableViewController {
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         // right button "+"
         let buttonAdd = UIBarButtonItem(title: "+", style: .plain, target: self, action: #selector(addItem))
+        let selectColor = UIColor(hexString: selectedCategory!.hexColor)
         
-        buttonAdd.tintColor = UIColor.white
+        buttonAdd.tintColor = UIColor(contrastingBlackOrWhiteColorOn: selectColor, isFlat: true)
         navigationItem.rightBarButtonItem = buttonAdd
         
 //        if let takeList = defaults.array(forKey: "ToDoList") as? [Item] {
 //            itemArray = takeList
 //        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        if let catHexColor = selectedCategory?.hexColor {
+            updateNavColor(hexColor: catHexColor)
+            searchBar.barTintColor = UIColor(hexString: catHexColor)
+            title = selectedCategory!.name
+        }
         
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        updateNavColor(hexColor: catNavBarColor)
+    }
+    
     //MARK: Tableview datasource Methods
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let itemCell = super.tableView(tableView, cellForRowAt: indexPath)
@@ -185,6 +202,15 @@ class TodoListViewController: SwipeTableViewController {
         itemArray = selectedCategory?.items.sorted(byKeyPath: "dataCreated", ascending: true)
     }
     
+    
+    func updateNavColor(hexColor withHexColor: String) {
+        
+        guard let navBar = navigationController?.navigationBar else {fatalError("Navigation Bar does not exist!")}
+        navBar.barTintColor = UIColor(hexString: withHexColor)
+        navBar.tintColor = UIColor(contrastingBlackOrWhiteColorOn: navBar.barTintColor, isFlat: true)
+        navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : UIColor(contrastingBlackOrWhiteColorOn: navBar.barTintColor, isFlat: true)]
+        
+    }
     
     //MARK: Swipe Class methods
     
